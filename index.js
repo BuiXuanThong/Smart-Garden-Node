@@ -1,6 +1,5 @@
 import express from 'express';
 import fetch from 'node-fetch';
-
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
@@ -17,7 +16,8 @@ admin.initializeApp({
 
 
 const createAlert = (type, currVal, min, max) => {
-    const content = type + " is out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]";
+    const content = {   time: Date.now(),
+                        content:  type + " is out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]"};
     const todoRef = admin.database().ref('Notifications');
     todoRef.push(content);
 }
@@ -25,22 +25,21 @@ const createAlert = (type, currVal, min, max) => {
 
 
 const setData = async () => {
-    const tempResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-temp/data');
-    const temp = await tempResponse.json();
-    const tempValue = temp[0].value;
-    const humidResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data');
-    const humid = await humidResponse.json();
-    const humidValue = humid[0].value;
+    const tempResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-temp/data/retain');
+    const temp = (await tempResponse.text()).split(',');
+    const tempValue = parseFloat(temp[0]) ;
+    const humidResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data/retain');
+     const humid = (await humidResponse.text()).split(',');
+    const humidValue = parseFloat(humid[0]);
 
-    const lightResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-light/data');
-    const light = await lightResponse.json();
-    const lightValue = light[0].value;
+    const lightResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-light/data/retain');
+    const light = (await lightResponse.text()).split(',');
+    const lightValue = parseFloat(light[0]);
 
-    const grHumidResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi-ground/data');
-    const grHumid = await grHumidResponse.json();
-    const grHumidValue = grHumid[0].value;
+    const grHumidResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi-ground/data/retain');
+    const grHumid = (await grHumidResponse.text()).split(',');
+    const grHumidValue = parseFloat(grHumid[0]);
 
-    // console.log(tempValue, humidValue, lightValue, grHumidValue);
 
 
     admin.database().ref('Min_max').on("value", (snapshot) => {
