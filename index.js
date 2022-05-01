@@ -24,7 +24,8 @@ const createAlert = (type, currVal, min, max) => {
 
 
 
-const setData = async () => {
+
+const getData = async () => {
     const tempResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-temp/data/retain');
     const temp = (await tempResponse.text()).split(',');
     const tempValue = parseFloat(temp[0]) ;
@@ -40,29 +41,36 @@ const setData = async () => {
     const grHumid = (await grHumidResponse.text()).split(',');
     const grHumidValue = parseFloat(grHumid[0]);
 
-
-
+    return {
+        tempValue: tempValue,
+        humidValue: humidValue,
+        lightValue: lightValue,
+        grHumidValue: grHumidValue
+    }
+}
+const checkAlert = async () => {
+    const data = await getData();
     admin.database().ref('Min_max').on("value", (snapshot) => {
         snapshot.forEach((child) => {
             // if temperature
             if (child.key === "temperature") {
-                if(tempValue > child.val().max || tempValue < child.val().min) {
-                    createAlert("Temperature", tempValue, child.val().min, child.val().max);
+                if(data.tempValue > child.val().max || data.tempValue < child.val().min) {
+                    createAlert("Temperature", data.tempValue, child.val().min, child.val().max);
                 }
             }
             else if (child.key === "humid") {
-                if(humidValue > child.val().max || humidValue < child.val().min) {
-                    createAlert("Humidity", humidValue, child.val().min, child.val().max);
+                if(data.humidValue > child.val().max || data.humidValue < child.val().min) {
+                    createAlert("Humidity", data.humidValue, child.val().min, child.val().max);
                 }
             }
             else if (child.key === "light") {
-                if(lightValue > child.val().max || lightValue < child.val().min) {
-                    createAlert("Light", lightValue, child.val().min, child.val().max);
+                if(data.lightValue > child.val().max || data.lightValue < child.val().min) {
+                    createAlert("Light", data.lightValue, child.val().min, child.val().max);
                 }
             }
             else if (child.key === "ground_humid") {
-                if(grHumidValue > child.val().max || grHumidValue < child.val().min) {
-                    createAlert("Ground Humidity", grHumidValue, child.val().min, child.val().max);
+                if(data.grHumidValue > child.val().max || data.grHumidValue < child.val().min) {
+                    createAlert("Ground Humidity", data.grHumidValue, child.val().min, child.val().max);
                 }
             }
         });
@@ -71,7 +79,7 @@ const setData = async () => {
 }
 
 // setInteval
-setInterval(setData, 10000);
+setInterval(checkAlert, 10000);
 
 // var firebase = require('firebase');
 // firebase.initializeApp({
@@ -90,8 +98,9 @@ const PORT = process.env.PORT || 5000;
 
 
 
-app.get("/", (req, res) => {
-    res.send("Hello world");
+app.get("/dashboard/data/cards", async (req, res) => {
+    const result = await getData()
+    res.send(result);
 });
 
 app.get("/myapi", (req, res) => {
