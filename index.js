@@ -16,7 +16,25 @@ admin.initializeApp({
 
 
 const createAlert = (type, currVal, min, max) => {
-    const content = {   time: Date.now(),
+    const timeNow = Date.now();
+    const day = new Date(timeNow).getDate();
+    const month = new Date(timeNow).getMonth() + 1;
+    const year = new Date(timeNow).getFullYear();
+    const hour = new Date(timeNow).getHours();
+    let minute = new Date(timeNow).getMinutes();
+    if (minute < 10) {
+        minute = "0" + minute;
+    }
+    let second = new Date(timeNow).getSeconds();
+    if (second < 10) {
+        second = "0" + second;
+    }
+    const date = day + "/" + month + "/" + year;
+    const time = hour + ":" + minute + ":" + second;
+    const fixedTime = date + " " + time;
+
+
+    const content = {   time: fixedTime,
                         content:  type + " is out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]"};
     const todoRef = admin.database().ref('Notifications');
     todoRef.push(content);
