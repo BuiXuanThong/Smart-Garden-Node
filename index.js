@@ -48,7 +48,7 @@ const getData = async () => {
     const temp = (await tempResponse.text()).split(',');
     const tempValue = parseFloat(temp[0]) ;
     const humidResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data/retain');
-     const humid = (await humidResponse.text()).split(',');
+    const humid = (await humidResponse.text()).split(',');
     const humidValue = parseFloat(humid[0]);
 
     const lightResponse = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-light/data/retain');
@@ -113,8 +113,83 @@ const PORT = process.env.PORT || 5000;
 // const response = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-led/data');
 // const data = await response.json();
 
+const getChartData = async (type, hours) => {
+    // fetch(`https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data/chart?hours=${hours}`).then((response) => response.json())
+    // .then((dataJson) =>{
+    //       const dat = {};
+    //       dat.labels = dataJson.data.map((point) => point[0]);
+    //       dat.datasets = {label: "bbc-temp", data: dataJson.data.map((point) => point[1] )};
+    //       setTempData({labels: dat.labels, datasets: dat.datasets});
+    //       console.log(tempData);
+    //       // return dat;
+    //     })
+    
+    const chartResponse = await fetch(`https://io.adafruit.com/api/v2/trong249/feeds/bbc-${type}/data/chart?hours=${hours}`);
+    const chartData = (await chartResponse.json()).data; //array 
+    console.log(chartData)
+    console.log(typeof chartData);
+    if (chartData.length == 0) return [];
+    let lastPoint = new Date(chartData[0][0]);
+    let reduceData = [];
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < chartData.length; i++){
+        const time = new Date(chartData[i][0]);
+        if (time.getMinutes() - lastPoint.getMinutes() >= 0 && time.getMinutes() - lastPoint.getMinutes() <= 1){
+            count += 1;
+            sum += chartData[i][1];
+        } else {
+            let ave = sum/count;
+            reduceData.push([lastPoint, ave]);
+            lastPoint = new Date(chartData[i][0]);
+            count = 1;
+            sum = chartData[i][1];
+        }
+    }
+    console.table(reduceData);
+    let data = {};
+    data.labels = reduceData.map((point) => point[0])
+    let innerData = [];
+    innerData = reduceData.map((point, i) =>  point[1])
+    for (let i = 0; i < innerData.length; i++){
+        if (!(innerData[i])){
+            innerData[i] = innerData[i-1];
+        }
+    }
+    data.datasets = {label: "bbc-temp", data: innerData};
+    return data;
 
 
+    
+}
+
+app.get("/dashboard/data/temp-chart/:hours", async (req, res) =>{
+    const hours = req.params.hours;
+    const type = "temp";
+    const data = await getChartData(type, hours);
+    res.send(data);
+})
+
+app.get("/dashboard/data/humid-chart/:hours", async (req, res) =>{
+    const hours = req.params.hours;
+    const type = "humi";
+    const data = await getChartData(type, hours);
+    res.send(data);
+})
+
+app.get("/dashboard/data/humid-ground-chart/:hours", async (req, res) =>{
+    const hours = req.params.hours;
+    const type = "humi-ground";
+    const data = await getChartData(type, hours);
+    res.send(data);
+})
+
+app.get("/dashboard/data/light-chart/:hours", async (req, res) =>{
+    const hours = req.params.hours;
+    const type = "light";
+    const data = await getChartData(type, hours);
+    res.send(data);
+})
 
 app.get("/dashboard/data/cards", async (req, res) => {
     const result = await getData()
