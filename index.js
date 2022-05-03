@@ -167,6 +167,7 @@ app.get("/dashboard/data/temp-chart/:hours", async (req, res) =>{
     const hours = req.params.hours;
     const type = "temp";
     const data = await getChartData(type, hours);
+    res.header("Access-Control-Allow-Origin", "*");
     res.send(data);
 })
 
@@ -174,6 +175,7 @@ app.get("/dashboard/data/humid-chart/:hours", async (req, res) =>{
     const hours = req.params.hours;
     const type = "humi";
     const data = await getChartData(type, hours);
+    res.header("Access-Control-Allow-Origin", "*");
     res.send(data);
 })
 
@@ -181,6 +183,7 @@ app.get("/dashboard/data/humid-ground-chart/:hours", async (req, res) =>{
     const hours = req.params.hours;
     const type = "humi-ground";
     const data = await getChartData(type, hours);
+    res.header("Access-Control-Allow-Origin", "*");
     res.send(data);
 })
 
@@ -188,11 +191,13 @@ app.get("/dashboard/data/light-chart/:hours", async (req, res) =>{
     const hours = req.params.hours;
     const type = "light";
     const data = await getChartData(type, hours);
+    res.header("Access-Control-Allow-Origin", "*");
     res.send(data);
 })
 
 app.get("/dashboard/data/cards", async (req, res) => {
     const result = await getData()
+    res.header("Access-Control-Allow-Origin", "*");
     res.send(result);
 });
 
