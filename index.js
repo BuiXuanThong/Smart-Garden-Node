@@ -20,17 +20,9 @@ const createAlert = (type, currVal, min, max) => {
     const day = new Date(timeNow).getDate();
     const month = new Date(timeNow).getMonth() + 1;
     const year = new Date(timeNow).getFullYear();
-    const hour = new Date(timeNow).getHours();
-    let minute = new Date(timeNow).getMinutes();
-    if (minute < 10) {
-        minute = "0" + minute;
-    }
-    let second = new Date(timeNow).getSeconds();
-    if (second < 10) {
-        second = "0" + second;
-    }
     const date = day + "/" + month + "/" + year;
-    const time = hour + ":" + minute + ":" + second;
+    
+    const time = new Date(timeNow).toLocaleTimeString();
     const fixedTime = date + " " + time;
 
 
@@ -97,7 +89,7 @@ const checkAlert = async () => {
 }
 
 // setInteval
-setInterval(checkAlert, 10000);
+setInterval(checkAlert, 3600000);
 
 // var firebase = require('firebase');
 // firebase.initializeApp({
