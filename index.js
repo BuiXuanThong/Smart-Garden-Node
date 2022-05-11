@@ -175,7 +175,11 @@ const PORT = process.env.PORT || 5000;
 // // fetch data from api link
 // const response = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-led/data');
 // const data = await response.json();
-
+const transformTime = (time) =>{
+    const hours = time.getHours()+7 >= 10 ? (time.getHours()+7).toString() : ('0'+ time.getHours());
+    const min = time.getMinutes() >= 10 ? time.getMinutes().toString() : ('0'+ time.getMinutes());
+    return hours + ':' + min    
+}
 const getChartData = async (type, hours) => {
     // fetch(`https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data/chart?hours=${hours}`).then((response) => response.json())
     // .then((dataJson) =>{
@@ -189,8 +193,8 @@ const getChartData = async (type, hours) => {
     
     const chartResponse = await fetch(`https://io.adafruit.com/api/v2/trong249/feeds/bbc-${type}/data/chart?hours=${hours}`);
     const chartData = (await chartResponse.json()).data; //array 
-    console.log(chartData)
-    console.log(typeof chartData);
+    // console.log(chartData)
+    // console.log(typeof chartData);
     if (chartData.length == 0) return [];
     let lastPoint = new Date(chartData[0][0]);
     let reduceData = [];
@@ -209,9 +213,9 @@ const getChartData = async (type, hours) => {
             sum = parseFloat(chartData[i][1]);
         }
     }
-    console.table(reduceData);
+    // console.table(reduceData);
     let data = {};
-    data.labels = reduceData.map((point) => point[0].getHours() + ':' + point[0].getMinutes())
+    data.labels = reduceData.map((point) => transformTime(point[0]))
     let innerData = [];
     innerData = reduceData.map((point, i) =>  point[1])
     for (let i = 0; i < innerData.length; i++){
