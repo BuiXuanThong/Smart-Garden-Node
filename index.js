@@ -129,18 +129,18 @@ const getChartData = async (type, hours) => {
         const time = new Date(chartData[i][0]);
         if (time.getMinutes() - lastPoint.getMinutes() >= 0 && time.getMinutes() - lastPoint.getMinutes() <= 1){
             count += 1;
-            sum += chartData[i][1];
+            sum += parseFloat(chartData[i][1]) ;
         } else {
             let ave = sum/count;
-            reduceData.push([lastPoint, ave]);
+            reduceData.push([lastPoint, ave.toFixed(2)]);
             lastPoint = new Date(chartData[i][0]);
             count = 1;
-            sum = chartData[i][1];
+            sum = parseFloat(chartData[i][1]);
         }
     }
     console.table(reduceData);
     let data = {};
-    data.labels = reduceData.map((point) => point[0])
+    data.labels = reduceData.map((point) => point[0].getHours() + ':' + point[0].getMinutes())
     let innerData = [];
     innerData = reduceData.map((point, i) =>  point[1])
     for (let i = 0; i < innerData.length; i++){
@@ -148,7 +148,7 @@ const getChartData = async (type, hours) => {
             innerData[i] = innerData[i-1];
         }
     }
-    data.datasets = {label: "bbc-temp", data: innerData};
+    data.datasets = {label: type, data: innerData};
     return data;
 
 
