@@ -14,6 +14,18 @@ admin.initializeApp({
   databaseURL: "https://myfirebase-dbb-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
+var continous_temp = false;
+var lastest_temp_time = 0;
+
+var continous_humid = false;
+var lastest_humid_time = 0;
+
+var continous_light = false;
+var lastest_light_time = 0;
+
+var continous_gr_humid = false;
+var lastest_gr_humid_time = 0;
+
 
 const createAlert = (type, currVal, min, max) => {
     const timeNow = Date.now();
@@ -24,12 +36,55 @@ const createAlert = (type, currVal, min, max) => {
     
     const time = new Date(timeNow).toLocaleTimeString();
     const fixedTime = date + " " + time;
+    
+    var content;
+    const delayCheck = 3600 * (1000) // seconds
+    if((type === "Temperature" && continous_temp === true && timeNow - lastest_temp_time > delayCheck)
+    || (type === "Humidity" && continous_humid === true && timeNow - lastest_humid_time > delayCheck)
+    || (type === "Light" && continous_light === true &&  timeNow - lastest_light_time > delayCheck)
+    || (type === "Ground Humidity" && continous_gr_humid === true && timeNow - lastest_gr_humid_time > delayCheck))
+    {
+        content = {   time: fixedTime,
+            content:  type + " is STILL out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]"};
+        
+        if(type === "Temperature") {
+            lastest_temp_time = timeNow;
+        }
+        else if(type === "Humidity") {
+            lastest_humid_time = timeNow;
+        }
+        else if(type === "Light") {
+            lastest_light_time = timeNow;
+        }
+        else if(type === "Ground Humidity") {
+            lastest_gr_humid_time = timeNow;
+        }
+    
+        const todoRef = admin.database().ref('Notifications');
+        todoRef.push(content);
+    }
+    else if((type === "Temperature" && continous_temp === false) || (type === "Humidity" && continous_humid === false) || (type === "Light" && continous_light === false) || (type === "Ground Humidity" && continous_gr_humid === false)) {
+        content = {   time: fixedTime,
+            content:  type + " is out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]"};
 
+        if(type === "Temperature") {
+            lastest_temp_time = timeNow;
+        }
+        else if(type === "Humidity") {
+            lastest_humid_time = timeNow;
+        }
+        else if(type === "Light") {
+            lastest_light_time = timeNow;
+        }
+        else if(type === "Ground Humidity") {
+            lastest_gr_humid_time = timeNow;
+        }
+    
+        const todoRef = admin.database().ref('Notifications');
+        todoRef.push(content);
+    }
 
-    const content = {   time: fixedTime,
-                        content:  type + " is out of range. Current value is " + currVal + " and range is [" + min + ",  " + max + "]"};
-    const todoRef = admin.database().ref('Notifications');
-    todoRef.push(content);
+    
 }
 
 
@@ -66,21 +121,37 @@ const checkAlert = async () => {
             if (child.key === "temperature") {
                 if(data.tempValue > child.val().max || data.tempValue < child.val().min) {
                     createAlert("Temperature", data.tempValue, child.val().min, child.val().max);
+                    continous_temp = true;
+                }
+                else {
+                    continous_temp = false;
                 }
             }
             else if (child.key === "humid") {
                 if(data.humidValue > child.val().max || data.humidValue < child.val().min) {
                     createAlert("Humidity", data.humidValue, child.val().min, child.val().max);
+                    continous_humid = true;
+                }
+                else {
+                    continous_humid = false;
                 }
             }
             else if (child.key === "light") {
                 if(data.lightValue > child.val().max || data.lightValue < child.val().min) {
                     createAlert("Light", data.lightValue, child.val().min, child.val().max);
+                    continous_light = true;
+                }
+                else {
+                    continous_light = false;
                 }
             }
             else if (child.key === "ground_humid") {
                 if(data.grHumidValue > child.val().max || data.grHumidValue < child.val().min) {
                     createAlert("Ground Humidity", data.grHumidValue, child.val().min, child.val().max);
+                    continous_gr_humid = true;
+                }
+                else {
+                    continous_gr_humid = false;
                 }
             }
         });
@@ -89,7 +160,7 @@ const checkAlert = async () => {
 }
 
 // setInteval
-setInterval(checkAlert, 3600000);
+setInterval(checkAlert, 1000);
 
 // var firebase = require('firebase');
 // firebase.initializeApp({
@@ -104,12 +175,6 @@ const PORT = process.env.PORT || 5000;
 // // fetch data from api link
 // const response = await fetch('https://io.adafruit.com/api/v2/trong249/feeds/bbc-led/data');
 // const data = await response.json();
-
-const transformTime = (time) =>{
-    const hours = time.getHours()+7 >= 10 ? (time.getHours()+7).toString() : ('0'+ time.getHours());
-    const min = time.getMinutes() >= 10 ? time.getMinutes().toString() : ('0'+ time.getMinutes());
-    return hours + ':' + min    
-}
 
 const getChartData = async (type, hours) => {
     // fetch(`https://io.adafruit.com/api/v2/trong249/feeds/bbc-humi/data/chart?hours=${hours}`).then((response) => response.json())
@@ -146,7 +211,7 @@ const getChartData = async (type, hours) => {
     }
     console.table(reduceData);
     let data = {};
-    data.labels = reduceData.map((point) => transformTime(point[0]))
+    data.labels = reduceData.map((point) => point[0].getHours() + ':' + point[0].getMinutes())
     let innerData = [];
     innerData = reduceData.map((point, i) =>  point[1])
     for (let i = 0; i < innerData.length; i++){
